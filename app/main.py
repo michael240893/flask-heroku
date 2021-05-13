@@ -15,7 +15,9 @@ from sklearn import metrics
 import csv
 import math
 from flask_cors import CORS
-from .outcome import OutcomeRainToday
+from .preprocessing_utils import prd_model
+from .preprocessing_utils import prd_eingabe
+
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
@@ -23,108 +25,58 @@ app = Flask(__name__)
 
 CORS(app)
 
-train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
+#train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
 
+DATA_TRAIN = 'static/weather_train_data.csv'
+DATA_TRAIN_Y = 'static/weather_train_label.csv'
 
-# The route() function of the Flask class is a decorator, 
-# which tells the application which URL should call 
-# the associated function.
-@app.route('/')
-# ‘/’ URL is bound with hello_world() function.
-def hello_world():
-    print(" the hello world entry point was called")
-    return 'Hello World'
+df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", delimiter=',') #,delimiter=';'
+df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1",  header=None,delimiter=',')
+df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
+
+df_train=pd.concat([df_train_y, df_train], axis=1)
 
 
 @app.route('/locations')
-# ‘/’ URL is bound with hello_world() function.
 def getLocations():
-    result= train['Location'].unique().tolist()
+    trainCopy=df_train.copy(deep=True)
+    result= trainCopy['Location'].unique().tolist()
     return jsonify(result)
-    #b = a.tolist() # nested lists with same data, indices
 
 @app.route('/wind_directions')
-# ‘/’ URL is bound with hello_world() function.
 def getWindDirections():
-    trainCopy=train.copy(deep=True)
+    trainCopy=df_train.copy(deep=True)
     result=trainCopy['WindGustDir'].fillna("No data")
     result= result.unique().tolist()
     return jsonify(result)
 
 
 @app.route('/weather')
-# ‘/’ URL is bound with hello_world() function.
 def getWeather():
-    print(" the weather entry point was called")
-    #train = pd.read_csv('/home/michael/Wirtschaftsinformatik/SS2021/Data Mining/Assignment_5/data/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
-
     paramLocation=request.args.get("location")
-    paramWindDir = request.args.get('windDirection')
-    paramRain=request.args.get('rainToday', type=int)
-    #print("temperature: "+temperature)
+    paramWindDirection = request.args.get('windDirection')
+    paramRainToday=request.args.get('rainToday')
+    paramPreassure=request.args.get("preassure", type=int)
+    paramPreassure=80
 
+    print("getWeather was called with params location: ", paramLocation, "windDirection: ",paramWindDirection," rainToday: ",paramRainToday)
 
-    #creating labelEncoder
-    le = preprocessing.LabelEncoder()
-    # Converting string labels into numbers.
+    input_param_arr=[[paramLocation, paramWindDirection, paramRainToday, paramPreassure]]
 
-
-    #print wheather_encoded
-
-    prep_train=train[["Location","WindGustDir", "Rainfall" , "RainToday"]]
-    prep_train_sub = prep_train
-    #prep_train_sub["Rainfall"].fillna(0)
-    prep_train_sub["ActualRain"]=prep_train_sub.apply(lambda x: 0 if math.isnan(x.Rainfall)|(x.Rainfall<1) else 1, axis=1)
-
-
-    unWindGustDir=prep_train_sub['WindGustDir'].fillna("empty")
-
-    encodedLoc=le.fit_transform(prep_train_sub['Location'])
-    encodedWindGustDir=le.fit_transform(unWindGustDir)
-    encodedActualRain=le.fit_transform(prep_train_sub['ActualRain'])
-
-    features=zip(encodedLoc,encodedWindGustDir,encodedActualRain)
-
-    #unRainToday=prep_train["RainToday"].fillna("empty")
-    label=prep_train_sub['RainToday'].fillna("No")
-    features = list(features)
-
-
-    ##################
-
-
-
-    le.fit(prep_train_sub['Location'])
-    encodedLocTest=le.transform([paramLocation])
-
-    le.fit(unWindGustDir)
-    encodedWindGustDirTest=le.transform([paramWindDir])
-
-    le.fit(prep_train_sub['ActualRain'])
-    encodedActualRainTest=le.transform([paramRain])
-
-    features_test=zip(encodedLocTest,encodedWindGustDirTest,encodedActualRainTest)
-    features_test = list(features_test)
-
-
-    #################
-
-    #Create a Gaussian Classifier
-    model = GaussianNB()
-
-    # Train the model using the training sets
-    model.fit(features,label)
-
-    #y_pred = model.predict(features_test)
-
-    #print(features_test)
-
-    predicted= model.predict(features_test) # 0:Overcast, 2:Mild
-    print(predicted)
-
+    df = df_train.copy(deep=True)
+    X_train_org, X_train, y_train, df_structure, model  = prd_model(df, [''])
+    X_test = prd_eingabe(input_param_arr, X_train_org, ['array_features'], df_structure)
+    predicted=model.predict(X_test)
+    #predicted=['Yes']
     return jsonify(
         rainNextDay=predicted[0]
     )
+
+
+
+    
+
+   
 
   
 
