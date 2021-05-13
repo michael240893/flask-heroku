@@ -15,12 +15,16 @@ from sklearn import metrics
 import csv
 import math
 from flask_cors import CORS
+from .outcome import OutcomeRainToday
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
 app = Flask(__name__)
 
 CORS(app)
+
+train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
+
 
 # The route() function of the Flask class is a decorator, 
 # which tells the application which URL should call 
@@ -31,16 +35,32 @@ def hello_world():
     print(" the hello world entry point was called")
     return 'Hello World'
 
+
+@app.route('/locations')
+# ‘/’ URL is bound with hello_world() function.
+def getLocations():
+    result= train['Location'].unique().tolist()
+    return jsonify(result)
+    #b = a.tolist() # nested lists with same data, indices
+
+@app.route('/wind_directions')
+# ‘/’ URL is bound with hello_world() function.
+def getWindDirections():
+    trainCopy=train.copy(deep=True)
+    result=trainCopy['WindGustDir'].fillna("No data")
+    result= result.unique().tolist()
+    return jsonify(result)
+
+
 @app.route('/weather')
 # ‘/’ URL is bound with hello_world() function.
-def weather():
+def getWeather():
     print(" the weather entry point was called")
     #train = pd.read_csv('/home/michael/Wirtschaftsinformatik/SS2021/Data Mining/Assignment_5/data/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
-    train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
 
     paramLocation=request.args.get("location")
-    paramWindDir = request.args.get('windDir')
-    paramRain=request.args.get('rain', type=int)
+    paramWindDir = request.args.get('windDirection')
+    paramRain=request.args.get('rainToday', type=int)
     #print("temperature: "+temperature)
 
 
@@ -102,7 +122,10 @@ def weather():
     predicted= model.predict(features_test) # 0:Overcast, 2:Mild
     print(predicted)
 
-    return 'prediction complete'+str(predicted[0])
+    return jsonify(
+        rainNextDay=predicted[0]
+    )
+
   
 
 @app.route('/dataframe')
