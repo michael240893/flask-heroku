@@ -14,7 +14,7 @@ from flask_cors import CORS
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
-
+MAX_ROWS=60000
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
@@ -31,7 +31,8 @@ print("Starting flask app")
 
 
 def prepare_dataset(df):
-    result=df.copy(deep=True)
+    print("prepare_dataset was called")
+    result=df
     result['Humidity3pm']=result['Humidity3pm'].fillna(df['Humidity3pm'].mean())
     result['Pressure3pm']=result['Pressure3pm'].fillna(df['Pressure3pm'].mean())
     result['Cloud3pm']=result['Cloud3pm'].fillna(df['Cloud3pm'].mean())
@@ -41,6 +42,7 @@ def prepare_dataset(df):
 
 
 def bin_v2(df, isTraining):
+    print("bin_v2 was called")
     result=df.copy(deep=True)
     
     result["bin_humidity"]=result.apply(lambda x: "High" if x.Humidity3pm>60 else 'Low', axis=1)
@@ -58,15 +60,15 @@ DATA_TRAIN = 'static/weather_train_data.csv'
 DATA_TRAIN_Y = 'static/weather_train_label.csv'
 
 print("reading training data")
-df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", nrows=40000, delimiter=',') #,delimiter=';'
+df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", nrows=MAX_ROWS, delimiter=',') #,delimiter=';'
 
 print("reading training labels")
-df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1", nrows=40000,  header=None,delimiter=',')
-df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
+df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1", nrows=MAX_ROWS,  header=None,delimiter=',')
+#df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
 
-df_train=pd.concat([df_train_y, df_train], axis=1)
+df_train['RainTomorrow']=df_train_y
+#df_train=pd.concat([df_train_y, df_train], axis=1)
 
-df_train = pd.concat([df_train_y, df_train], axis=1)
 
 # result is the prepared training data set
 cleaned=prepare_dataset(df_train)
