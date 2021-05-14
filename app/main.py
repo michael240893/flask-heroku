@@ -6,11 +6,7 @@ from flask import jsonify
 import json
 import pandas as pd
 
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.naive_bayes import MultinomialNB
-from sklearn import preprocessing
 from sklearn import metrics
 import csv
 import math
@@ -101,6 +97,10 @@ def getModel():
 
 def predict(test_data):
 
+    
+    
+    model=getModel()
+
     le = LabelEncoder()
 
     # test data encoding
@@ -128,7 +128,6 @@ def predict(test_data):
     y_pred = model.predict(features_test)
     return y_pred[0]
 
-model=getModel()
 
 
 @app.route('/locations')
@@ -137,12 +136,6 @@ def getLocations():
     result= trainCopy['Location'].unique().tolist()
     return jsonify(result)
 
-@app.route('/wind_directions')
-def getWindDirections():
-    trainCopy=df_train.copy(deep=True)
-    result=trainCopy['WindGustDir'].fillna("No data")
-    result= result.unique().tolist()
-    return jsonify(result)
 
 
 @app.route('/weather')
