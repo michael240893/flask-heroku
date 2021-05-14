@@ -6,12 +6,7 @@ from flask import jsonify
 import json
 import pandas as pd
 
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.naive_bayes import MultinomialNB
-from sklearn import preprocessing
-from sklearn import metrics
 import csv
 import math
 from flask_cors import CORS
@@ -69,8 +64,8 @@ df_train = pd.concat([df_train_y, df_train], axis=1)
 
 # result is the prepared training data set
 cleaned=prepare_dataset(df_train)
-df_train_y=null
-df_train=null
+df_train_y=None
+df_train=None
 prepared=bin_v2(cleaned, True)
 
 
