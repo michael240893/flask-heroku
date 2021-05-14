@@ -58,10 +58,10 @@ DATA_TRAIN = 'static/weather_train_data.csv'
 DATA_TRAIN_Y = 'static/weather_train_label.csv'
 
 print("reading training data")
-df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", nrows=50000, delimiter=',') #,delimiter=';'
+df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", nrows=40000, delimiter=',') #,delimiter=';'
 
 print("reading training labels")
-df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1", nrows=50000,  header=None,delimiter=',')
+df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1", nrows=40000,  header=None,delimiter=',')
 df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
 
 df_train=pd.concat([df_train_y, df_train], axis=1)
