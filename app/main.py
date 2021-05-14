@@ -22,6 +22,8 @@ app = Flask(__name__)
 
 CORS(app)
 
+print("Starting flask app")
+
 #train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
 
 
@@ -55,7 +57,10 @@ def bin_v2(df, isTraining):
 DATA_TRAIN = 'static/weather_train_data.csv'
 DATA_TRAIN_Y = 'static/weather_train_label.csv'
 
+print("reading training data")
 df_train = pd.read_csv(DATA_TRAIN, encoding = "ISO-8859-1", delimiter=',') #,delimiter=';'
+
+print("reading training labels")
 df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1",  header=None,delimiter=',')
 df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
 
@@ -136,6 +141,7 @@ def predict(test_data):
 
 @app.route('/locations')
 def getLocations():
+    console.log("getLocations was called")
     result= train_data['Location'].unique().tolist()
     return jsonify(result)
 
