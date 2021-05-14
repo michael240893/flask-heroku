@@ -133,13 +133,11 @@ model=getModel()
 
 @app.route('/locations')
 def getLocations():
-    trainCopy=df_train.copy(deep=True)
     result= trainCopy['Location'].unique().tolist()
     return jsonify(result)
 
 @app.route('/wind_directions')
 def getWindDirections():
-    trainCopy=df_train.copy(deep=True)
     result=trainCopy['WindGustDir'].fillna("No data")
     result= result.unique().tolist()
     return jsonify(result)
