@@ -15,8 +15,9 @@ from sklearn import metrics
 import csv
 import math
 from flask_cors import CORS
-from .preprocessing_utils import prd_model
-from .preprocessing_utils import prd_eingabe
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier
+
 
 
 # Flask constructor takes the name of 
@@ -27,6 +28,34 @@ CORS(app)
 
 #train = pd.read_csv('static/weather_train_data.csv', encoding = "ISO-8859-1", delimiter=',')
 
+
+
+
+
+def prepare_dataset(df):
+    result=df.copy(deep=True)
+    result['Humidity3pm']=result['Humidity3pm'].fillna(df['Humidity3pm'].mean())
+    result['Pressure3pm']=result['Pressure3pm'].fillna(df['Pressure3pm'].mean())
+    result['Cloud3pm']=result['Cloud3pm'].fillna(df['Cloud3pm'].mean())
+    result['Sunshine']=result['Sunshine'].fillna(df['Sunshine'].mean())
+    result['Rainfall']=result['Rainfall'].fillna(df['Rainfall'].mean())
+    return result
+
+
+def bin_v2(df, isTraining):
+    result=df.copy(deep=True)
+    
+    result["bin_humidity"]=result.apply(lambda x: "High" if x.Humidity3pm>60 else 'Low', axis=1)
+    result["bin_pressure"]=result.apply(lambda x: "High" if x.Pressure3pm>1017 else ('Medium' if x.Pressure3pm>1011 else 'Low'), axis=1)
+    result["bin_cloud"]=result.apply(lambda x: "High" if x.Cloud3pm>7 else ('Medium' if x.Cloud3pm>6 else 'Low'), axis=1)
+    result["bin_sunshine"]=result.apply(lambda x: "High" if x.Sunshine>6 else 'Low', axis=1)
+    result["bin_rainfall"]=result.apply(lambda x: "High" if x.Rainfall>1 else  ('Medium' if x.Rainfall>0.1 else 'Low'), axis=1)
+    if (isTraining):
+        return result[['RainTomorrow','Location','bin_humidity', 'bin_pressure', 'bin_cloud','bin_sunshine','bin_rainfall']]
+    else:
+        return result[['Location','bin_humidity', 'bin_pressure', 'bin_cloud','bin_sunshine','bin_rainfall']]
+
+
 DATA_TRAIN = 'static/weather_train_data.csv'
 DATA_TRAIN_Y = 'static/weather_train_label.csv'
 
@@ -35,6 +64,71 @@ df_train_y = pd.read_csv(DATA_TRAIN_Y, encoding = "ISO-8859-1",  header=None,del
 df_train_y = df_train_y.rename(columns = { 0: 'RainTomorrow'}, inplace = False)
 
 df_train=pd.concat([df_train_y, df_train], axis=1)
+
+df_train = pd.concat([df_train_y, df_train], axis=1)
+
+# result is the prepared training data set
+cleaned=prepare_dataset(df_train)
+prepared=bin_v2(cleaned, True)
+
+
+train_data=prepared[['Location', 'bin_humidity', 'bin_pressure', 'bin_cloud','bin_sunshine','bin_rainfall']]
+
+train_labels=prepared['RainTomorrow']
+
+def getModel():
+    le = LabelEncoder()
+
+    # training data encoding
+    encodedLocation=le.fit_transform(train_data['Location'])
+    encodedHumidity=le.fit_transform(train_data['bin_humidity'])
+    encodedPressure=le.fit_transform(train_data['bin_pressure'])
+    encodedCloud=le.fit_transform(train_data['bin_cloud'])
+    encodedSunshine=le.fit_transform(train_data['bin_sunshine'])
+    encodedRainfall=le.fit_transform(train_data['bin_rainfall'])                                                 
+
+    features=zip(encodedLocation, encodedHumidity,encodedPressure,encodedCloud, encodedSunshine, encodedRainfall)
+    features = list(features)
+
+    label=train_labels
+
+    # DecisionTree
+    model = DecisionTreeClassifier(max_depth=10)
+    model.fit(features, label)
+   
+    return model
+
+
+def predict(test_data):
+
+    le = LabelEncoder()
+
+    # test data encoding
+    le.fit(train_data['Location'])
+    testEncodedLocation=le.transform(test_data['Location'])
+    
+    le.fit(train_data['bin_humidity'])
+    testEncodedHumidity=le.transform(test_data['bin_humidity'])
+
+    le.fit(train_data['bin_pressure'])
+    testEncodedPressure=le.transform(test_data['bin_pressure'])
+
+    le.fit(train_data['bin_cloud'])
+    testEncodedCloud=le.transform(test_data['bin_cloud'])
+
+    le.fit(train_data['bin_sunshine'])
+    testEncodedSunshine=le.transform(test_data['bin_sunshine'])
+
+    le.fit(train_data['bin_rainfall'])   
+    testEncodedRainfall=le.transform(test_data['bin_rainfall'])
+
+    features_test=zip(testEncodedLocation, testEncodedHumidity,testEncodedPressure, testEncodedCloud, testEncodedSunshine, testEncodedRainfall)
+    features_test = list(features_test)
+
+    y_pred = model.predict(features_test)
+    return y_pred[0]
+
+model=getModel()
 
 
 @app.route('/locations')
@@ -54,45 +148,25 @@ def getWindDirections():
 @app.route('/weather')
 def getWeather():
     paramLocation=request.args.get("location")
-    paramWindDirection = request.args.get('windDirection')
-    paramRainToday=request.args.get('rainToday')
-    paramPreassure=request.args.get("preassure", type=int)
-    paramPreassure=80
+    paramRainfall=request.args.get('rainfall', type=int)
+    paramHumidity=request.args.get('humidity', type=int)
+    paramPressure=request.args.get("pressure", type=int)
+    paramCloud=request.args.get("cloud", type=int)
+    paramSunshine=request.args.get("sunshine", type=int)
 
-    print("getWeather was called with params location: ", paramLocation, "windDirection: ",paramWindDirection," rainToday: ",paramRainToday)
 
-    input_param_arr=[[paramLocation, paramWindDirection, paramRainToday, paramPreassure]]
+    print("getWeather was called with params location: ", paramLocation, "rainfall: ",paramRainfall," humidity: ",paramHumidity, " pressure: ",paramPressure,"cloud: ",paramCloud,"sunshine: ",paramSunshine)
 
-    df = df_train.copy(deep=True)
-    X_train_org, X_train, y_train, df_structure, model  = prd_model(df, [''])
-    X_test = prd_eingabe(input_param_arr, X_train_org, ['array_features'], df_structure)
-    predicted=model.predict(X_test)
+
+    params = {'Location': [paramLocation], 'Humidity3pm': [paramHumidity], 'Pressure3pm':[paramPressure],'Cloud3pm':[paramCloud],'Sunshine':[paramSunshine],'Rainfall':[paramRainfall]}
+    paramsDf = pd.DataFrame(data=params)
+
+    test_data=bin_v2(paramsDf, False)
+
+    predicted=predict(test_data)
     #predicted=['Yes']
     return jsonify(
         rainNextDay=predicted[0]
     )
 
 
-
-    
-
-   
-
-  
-
-@app.route('/dataframe')
-# ‘/’ URL is bound with hello_world() function.
-def dataframe():
-    print(" the dataframe entry point was called")
-    df = pd.read_csv('/home/michael/Wirtschaftsinformatik/SS2021/Data Mining/Assignment_2/data/company_data.csv')
-
-    #jsonfiles = json.loads(df.to_json(orient='records'))
-    return df.to_json(orient="records")
-
-
-# main driver function
-if __name__ == '__main__':
-  
-    # run() method of Flask class runs the application 
-    # on the local development server.
-    app.run()
