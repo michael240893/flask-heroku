@@ -67,10 +67,14 @@ df_train = pd.concat([df_train_y, df_train], axis=1)
 cleaned=prepare_dataset(df_train)
 prepared=bin_v2(cleaned, True)
 
+df_train=None
+df_train_y=None
 
 train_data=prepared[['Location', 'bin_humidity', 'bin_pressure', 'bin_cloud','bin_sunshine','bin_rainfall']]
 
 train_labels=prepared['RainTomorrow']
+
+
 
 def getModel():
     le = LabelEncoder()
@@ -132,8 +136,7 @@ def predict(test_data):
 
 @app.route('/locations')
 def getLocations():
-    trainCopy=df_train.copy(deep=True)
-    result= trainCopy['Location'].unique().tolist()
+    result= train_data['Location'].unique().tolist()
     return jsonify(result)
 
 
