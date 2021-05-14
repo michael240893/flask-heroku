@@ -69,6 +69,8 @@ df_train = pd.concat([df_train_y, df_train], axis=1)
 
 # result is the prepared training data set
 cleaned=prepare_dataset(df_train)
+df_train_y=null
+df_train=null
 prepared=bin_v2(cleaned, True)
 
 
