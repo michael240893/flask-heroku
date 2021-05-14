@@ -133,13 +133,7 @@ model=getModel()
 
 @app.route('/locations')
 def getLocations():
-    result= trainCopy['Location'].unique().tolist()
-    return jsonify(result)
-
-@app.route('/wind_directions')
-def getWindDirections():
-    result=trainCopy['WindGustDir'].fillna("No data")
-    result= result.unique().tolist()
+    result= train_data['Location'].unique().tolist()
     return jsonify(result)
 
 
