@@ -14,7 +14,7 @@ from flask_cors import CORS
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
-MAX_ROWS=60000
+MAX_ROWS=50000
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
@@ -43,8 +43,8 @@ def prepare_dataset(df):
 
 def bin_v2(df, isTraining):
     print("bin_v2 was called")
-    result=df.copy(deep=True)
-    
+    #result=df.copy(deep=True)
+    result=df
     result["bin_humidity"]=result.apply(lambda x: "High" if x.Humidity3pm>60 else 'Low', axis=1)
     result["bin_pressure"]=result.apply(lambda x: "High" if x.Pressure3pm>1017 else ('Medium' if x.Pressure3pm>1011 else 'Low'), axis=1)
     result["bin_cloud"]=result.apply(lambda x: "High" if x.Cloud3pm>7 else ('Medium' if x.Cloud3pm>6 else 'Low'), axis=1)
@@ -133,7 +133,7 @@ def predict(test_data):
     features_test = list(features_test)
 
     y_pred = model.predict(features_test)
-    return y_pred[0]
+    return y_pred
 
 
 
