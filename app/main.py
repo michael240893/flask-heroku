@@ -98,6 +98,8 @@ def getModel():
 
 def predict(test_data):
 
+    model=getModel()
+
     le = LabelEncoder()
 
     # test data encoding
@@ -125,7 +127,6 @@ def predict(test_data):
     y_pred = model.predict(features_test)
     return y_pred[0]
 
-model=getModel()
 
 
 @app.route('/locations')
