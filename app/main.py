@@ -14,7 +14,9 @@ from flask_cors import CORS
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
-MAX_ROWS=50000
+# due to memory restrictions concerning hobby accounts on Heroku we can use here a subset of rows for the hosted version
+MAX_ROWS=45000
+#MAX_ROWS=None
 
 # Flask constructor takes the name of 
 # current module (__name__) as argument.
@@ -166,7 +168,8 @@ def getWeather():
     predicted=predict(test_data)
     #predicted=['Yes']
     return jsonify(
-        rainNextDay=predicted[0]
+        rainNextDay=predicted[0],
+        subset=MAX_ROWS
     )
 
 
